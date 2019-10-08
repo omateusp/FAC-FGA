@@ -1,0 +1,85 @@
+    .data
+strn: .asciiz "\n"
+str1: .asciiz "Entradas invalidas."
+str2: .asciiz "O modulo nao eh primo."
+limit: .word 65535
+
+    .text
+main:
+    li $v0, 5		# read int
+    syscall
+    move $s0, $v0	# $s0 = a
+    li $v0, 5
+    syscall
+    move $s1, $v0 	# $s1 = b
+    li $v0, 5
+    syscall
+    move $s2, $v0	# $s2 = c
+
+    jal verify_values
+    jal check_prime_module
+
+    li $v0, 10
+    syscall
+
+verify_values:
+    lw $t2, limit   # $t2 = 65535
+
+    # testing if($s0 >= 0 && $s0 <65535)
+    slt $t0, $s0, $t2
+    beq $t0, $t1, bad_entry
+    slti $t0, $s0, 0
+    bne $t0, $zero, bad_entry
+
+    # testing if($s1 >= 0 && $s1 <65535)
+    slt $t0, $s1, $t2
+    beq $t0, $t1, bad_entry
+    slti $t0, $s1, 0
+    bne $t0, $zero, bad_entry
+
+    # testing if($s2 >= 0 && $s2 <65535)
+    slt $t0, $s2, $t2
+    beq $t0, $t1, bad_entry
+    slti $t0, $s2, 0
+    bne $t0, $zero, bad_entry
+
+    jr $ra
+
+
+bad_entry:
+    li $v0, 4
+    la $a0, str1
+    syscall
+    la $a0, strn
+    syscall
+    li $v0, 10
+    syscall
+
+check_prime_module:
+    li $t0, 2
+
+is_prime:
+    slt	$t1, $t0, $s2   # if (x > num)
+    bne	$t1, $zero, is_prime_loop		
+    jr	$ra     # prime return
+
+is_prime_loop:
+    div $s2, $t0
+    mfhi $t3    # c = (num % x)
+    slti $t4, $t3, 1				
+    beq	$t4, $zero, next_number  # if (c == 0)
+    add	$v0, $zero, $zero
+    j not_prime # not a prime exit				
+
+next_number:		
+    addi $t0, $t0, 1    # x++
+    j	is_prime # continue the loop on the next number
+
+not_prime:
+    li $v0, 4
+    la $a0, str2
+    syscall
+    la $a0, strn
+    syscall
+    li $v0, 10
+    syscall
