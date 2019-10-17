@@ -2,22 +2,24 @@
 strn: .asciiz "\n"
 str1: .asciiz "Entradas invalidas."
 str2: .asciiz "O modulo nao eh primo."
+str3: .asciiz "Saida."
 limit: .word 65535
+prime: .word 251
 
     .text
 main:
     li $v0, 5		# read int
     syscall
-    move $s0, $v0	# $s0 = a
+    move $s0, $v0	# $s0 = b
     li $v0, 5
     syscall
-    move $s1, $v0 	# $s1 = b
+    move $s1, $v0 	# $s1 = e
     li $v0, 5
     syscall
-    move $s2, $v0	# $s2 = c
+    move $s2, $v0	# $s2 = m
 
     jal verify_values
-    jal check_prime_module
+    jal eh_primo
 
     li $v0, 10
     syscall
@@ -27,25 +29,23 @@ verify_values:
 
     # testing if($s0 >= 0 && $s0 <65535)
     slt $t0, $s0, $t2
-    beq $t0, $t1, bad_entry
+    beq $t0, $zero, bad_entry
     slti $t0, $s0, 0
     bne $t0, $zero, bad_entry
 
     # testing if($s1 >= 0 && $s1 <65535)
     slt $t0, $s1, $t2
-    beq $t0, $t1, bad_entry
+    beq $t0, $zero, bad_entry
     slti $t0, $s1, 0
     bne $t0, $zero, bad_entry
 
     # testing if($s2 >= 0 && $s2 <65535)
     slt $t0, $s2, $t2
-    beq $t0, $t1, bad_entry
+    beq $t0, $zero, bad_entry
     slti $t0, $s2, 0
     bne $t0, $zero, bad_entry
 
     jr $ra
-
-
 bad_entry:
     li $v0, 4
     la $a0, str1
@@ -55,29 +55,51 @@ bad_entry:
     li $v0, 10
     syscall
 
-check_prime_module:
+eh_primo:
+    li $t0, 1
+    beq $s2, $t0, num_eh # if M == 1, num_eh
     li $t0, 2
-
-is_prime:
-    slt	$t1, $t0, $s2   # if (x > num)
-    bne	$t1, $zero, is_prime_loop		
-    jr	$ra     # prime return
-
-is_prime_loop:
+    bne $s2, $t0, par_verif # if M == 2, return
+    jr $ra
+par_verif:
+    div $s2, $t0 
+    mfhi $t1
+    beq $t1, $zero, num_eh  # verifica numeros pares
+# possível verificar números multiplos de 5 também
+    li $t0, 3
+    bne $s2, $t0, mod_check # inicializa o loop no 3
+    jr $ra
+eh_primo_verif:
+    sltu $t1, $t0, $s2
+    bne $t1, $zero, mod_check # se $t0 >= M, entao é primo
+    jr $ra
+mod_check:
     div $s2, $t0
-    mfhi $t3    # c = (num % x)
-    slti $t4, $t3, 1				
-    beq	$t4, $zero, next_number  # if (c == 0)
-    add	$v0, $zero, $zero
-    j not_prime # not a prime exit				
-
-next_number:		
-    addi $t0, $t0, 1    # x++
-    j	is_prime # continue the loop on the next number
-
-not_prime:
+    mfhi $t1
+    beq $t1, $zero, num_eh # se $t1 == 0, nao é primo
+prox_numero:
+    addi $t0, $t0, 2 # de 2 em 2 para apenas impares
+    j eh_primo_verif
+num_eh:
     li $v0, 4
     la $a0, str2
+    syscall
+    la $a0, strn
+    syscall
+    li $v0, 10
+    syscall
+
+calc_exp:
+    beq $s1, $zero, imprime_saida
+    div $s0, $s2
+    mfhi $t0    # b %= m
+calc_exp_loop:
+    beq $s1, $zero, imprime_saida
+    #multu $s0, 
+    j calc_exp_loop
+imprime_saida:
+    li $v0, 4
+    la $a0, str3
     syscall
     la $a0, strn
     syscall
