@@ -2,56 +2,59 @@
 strn: .asciiz "\n"
 str1: .asciiz "Entradas invalidas."
 str2: .asciiz "O modulo nao eh primo."
-str3: .asciiz "Saida."
-limit: .word 65535
-prime: .word 251
+limit: .word 65536
+res1: .asciiz "A exponencial modular "
+res2: .asciiz " elevado a "
+res3: .asciiz " (mod "
+res4: .asciiz ") eh "
+res5: .asciiz "."
 
     .text
 main:
-    li $v0, 5		# read int
-    syscall
+    jal le_inteiro
     move $s0, $v0	# $s0 = b
-    li $v0, 5
-    syscall
+    jal le_inteiro
     move $s1, $v0 	# $s1 = e
-    li $v0, 5
-    syscall
+    jal le_inteiro
     move $s2, $v0	# $s2 = m
 
     jal verify_values
     jal eh_primo
+    jal prep_calc_exp
 
     li $v0, 10
+    syscall # exit
+
+le_inteiro:
+    li $v0, 5		# read int
     syscall
+    jr $ra
+
 
 verify_values:
     lw $t2, limit   # $t2 = 65535
-
     # testing if($s0 >= 0 && $s0 <65535)
     slt $t0, $s0, $t2
     beq $t0, $zero, bad_entry
     slti $t0, $s0, 0
     bne $t0, $zero, bad_entry
-
     # testing if($s1 >= 0 && $s1 <65535)
     slt $t0, $s1, $t2
     beq $t0, $zero, bad_entry
     slti $t0, $s1, 0
     bne $t0, $zero, bad_entry
-
     # testing if($s2 >= 0 && $s2 <65535)
     slt $t0, $s2, $t2
     beq $t0, $zero, bad_entry
     slti $t0, $s2, 0
     bne $t0, $zero, bad_entry
-
     jr $ra
 bad_entry:
     li $v0, 4
     la $a0, str1
     syscall
-    la $a0, strn
-    syscall
+    #la $a0, strn
+    #syscall
     li $v0, 10
     syscall
 
@@ -84,24 +87,68 @@ num_eh:
     li $v0, 4
     la $a0, str2
     syscall
-    la $a0, strn
-    syscall
+    #la $a0, strn
+    #syscall
     li $v0, 10
     syscall
 
-calc_exp:
-    beq $s1, $zero, imprime_saida
-    div $s0, $s2
-    mfhi $t0    # b %= m
-calc_exp_loop:
-    beq $s1, $zero, imprime_saida
-    #multu $s0, 
-    j calc_exp_loop
-imprime_saida:
-    li $v0, 4
-    la $a0, str3
-    syscall
-    la $a0, strn
-    syscall
-    li $v0, 10
-    syscall
+prep_calc_exp:
+    la $t8, 0($s0) # guarda o valor original da base
+    la $t9, 0($s1) # Guarda o valor original do expoente
+    addi $s6, $zero, 1 # $s6 = 1
+	addi $s7, $zero, 2 # $s7 = 2
+calc_exp: # Calcula b^e.
+	bgt $s0, $s2, base_maior # Se b > m, j base_maior.
+	div $s1, $s7 # e/2
+	mfhi $t3 # $t3 = resto
+	mflo $t4 # $t4 = resultado da div
+	beq $t3, $zero, b2 # Se resto = 0, j b2
+	beq $s1, 1, exit_calc_exp # Se e = 1, j exit_calc_exp
+	subi $s1, $s1, 1 # Se e for impar, e = e-1
+	mul $s6, $s6, $s0 # b * $s6
+	bgt $s6, $s2, temp_maior # Se $s6 > m, j temp_maior
+	j calc_exp
+temp_maior:
+	div $s6, $s2 # $s6/m
+	mfhi $s6 # $s6 = resto
+	j calc_exp
+base_maior:
+	div $s0, $s2 # b/m
+	mfhi $s0 # b = resto
+    j calc_exp
+b2:
+	mul $s0, $s0, $s0 # b^2
+	move $s1, $t4 # e = e/2
+	j calc_exp
+exit_calc_exp:
+	mul $s0, $s0, $s6 # b = b*$s6
+	div $s0, $s2 # b/m
+	mfhi $t3 # $t3 = resultado
+	li $v0, 4 
+	la $a0, res1 
+	syscall # printf("res1")
+	li $v0, 1 
+	move $a0, $t8 
+	syscall # printf("$t8") imprime a base
+	li $v0, 4 
+	la $a0, res2 
+	syscall # printf("res2")
+	li $v0, 1 
+	move $a0, $t9 
+	syscall # printf("$t9") imprime expoente
+	li $v0, 4 
+	la $a0, res3 
+	syscall # printf("res3")
+	li $v0, 1 
+	move $a0, $s2 
+	syscall # printf("$s2") imprime o modulo
+	li $v0, 4 
+	la $a0, res4 
+	syscall # printf("res4")
+	li $v0, 1 
+	move $a0, $t3 
+	syscall # printf("$t3") imprime o resultado
+	li $v0, 4 
+	la $a0, res5 
+	syscall # printf(".")
+	jr $ra # return
