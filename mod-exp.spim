@@ -104,7 +104,7 @@ calc_exp: # Calcula b^e.
 	mflo $t4 # $t4 = resultado da div
 	beq $t3, $zero, b2 # Se resto = 0, j b2
 	beq $s1, 1, exit_calc_exp # Se e = 1, j exit_calc_exp
-	subi $s1, $s1, 1 # Se e for impar, e = e-1
+	addi $s1, $s1, -1 # Se e for impar, e = e-1
 	mul $s6, $s6, $s0 # b * $s6
 	bgt $s6, $s2, temp_maior # Se $s6 > m, j temp_maior
 	j calc_exp
