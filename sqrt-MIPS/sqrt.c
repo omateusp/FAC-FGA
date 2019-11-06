@@ -22,7 +22,11 @@ void calc_raiz(double a1, double x, int i, int e)
   a2 = (a1 + b1) / 2.0;
   //printf("b%d = %.13f\n", i + 1, a2);
   // printf("b1= %lf x= %lf\n", b1, x);
-  if (calc_erro(b1, e, x))
+  if (i > 100)
+  {
+    printf("Nao foi possivel calcular sqrt(%.0lf).\n", x);
+  }
+  else if (calc_erro(b1, e, x))
   {
     imprime_saida(b1, i, x);
   }
@@ -64,9 +68,16 @@ int main()
   int x, e;
   scanf("%d", &x);
   scanf("%d", &e);
-  a = encontra_inteiros(x);
-  // printf("a = %lf\n", a);
-  // printf("a= %lf x= %lf\n", a, x);
-  calc_raiz(a, (double)x, 1, e);
+  if (x <= 1 || e <= 0)
+  {
+    printf("Entradas invalidas.\n");
+  }
+  else
+  {
+    a = encontra_inteiros(x);
+    // printf("a = %lf\n", a);
+    // printf("a= %lf x= %lf\n", a, x);
+    calc_raiz(a, (double)x, 1, e);
+  }
   return 0;
 }
